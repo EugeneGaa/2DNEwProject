@@ -10,9 +10,12 @@ public enum State
         jump,
         dash,
         fall,
+        attack,
+        hit,
     }
 public class HeroController : MonoBehaviour
 {
+    [Header("----- Components -----")]
     public IPlayerInput pi;
     public Rigidbody2D rigid;
     public LayerMask ground;
@@ -20,6 +23,9 @@ public class HeroController : MonoBehaviour
     public Transform ceiling;
     public Animator anim;
     public State state;
+    public BattleManager bm;
+    public Collider2D rightAtkCol;
+    public Collider2D leftAtkCol;
 
     [Header("----- Other Data -----")]
     public float walkSpeed = 3;
@@ -27,6 +33,12 @@ public class HeroController : MonoBehaviour
     public int jumpCount = 2;
     public float dashForce = 5;
     public int dashCount = 2;
+    public float hitForceX = 0.5f;
+    public float hitForceY = 0.5f;
+    public int hP = 3;
+    public float immrotalTime;
+    private float hitTimer = 0;
+
 
     [Header("----- First Order State Flags -----")]
     public bool jumpPressed;
@@ -35,6 +47,7 @@ public class HeroController : MonoBehaviour
     public bool isJump;
     public bool isDash;
     public bool isFacingRight;
+    public bool canHit;
 
 
     private void Awake()
@@ -44,7 +57,11 @@ public class HeroController : MonoBehaviour
         groundCheck = transform.DeepFind("groundCheck");
         ceiling = transform.DeepFind("ceiling");
         anim = this.GetComponent<Animator>();
+        bm = this.GetComponentInChildren<BattleManager>();
+        bm.hc = this;
         state = State.normal;
+        rightAtkCol = transform.DeepFind("rightAttack").GetComponent<Collider2D>();
+        leftAtkCol = transform.DeepFind("leftAttack").GetComponent<Collider2D>();
     }
 
     private void Update()
@@ -61,6 +78,7 @@ public class HeroController : MonoBehaviour
         if(pi.attack)
         {
             anim.SetTrigger("Attack");
+            state = State.attack;
         }
         SetAnimation();
     }
@@ -74,7 +92,7 @@ public class HeroController : MonoBehaviour
         {
             Dash();
         }
-        else if (state != State.dash)
+        else if (state != State.dash&&state!=State.hit)
         {
             Move();
         }
@@ -82,6 +100,16 @@ public class HeroController : MonoBehaviour
         if(isGround&&state==State.normal)
         {
             dashCount = 1;
+        }
+
+        if(!canHit)
+        {
+            hitTimer += Time.deltaTime;
+            if(hitTimer>=immrotalTime)
+            {
+                canHit = true;
+                hitTimer = 0;
+            }
         }
     }
 
@@ -150,6 +178,43 @@ public class HeroController : MonoBehaviour
         }
     }
 
+    public void TakeDamage(float enemyPositionX)
+    {
+        if (canHit)
+        {
+            canHit = false;
+            if (hP > 0)
+            {
+                hP -= 1;
+                anim.SetTrigger("Hit");
+                state = State.hit;
+                if (enemyPositionX > this.transform.position.x)//敌人在右边
+                {
+                    rigid.velocity = new Vector2(-hitForceX, hitForceY);
+                }
+                else if (enemyPositionX < this.transform.position.x)//敌人在左边
+                {
+                    rigid.velocity = new Vector2(hitForceX, hitForceY);
+                }
+            }
+            else if (hP <= 0)
+            {
+                anim.SetTrigger("Die");
+                Die();
+            }
+        }
+        else
+        {
+            //donothing
+        }
+
+    }
+
+    public void Die()
+    {
+
+    }
+
     public void SetAnimation()
     {
         anim.SetFloat("WalkValue", Mathf.Abs(pi.dRight));
@@ -170,6 +235,7 @@ public class HeroController : MonoBehaviour
         rigid.gravityScale = 3;
     }
 
+
     public void OnWalkEnter()
     {
         state = State.walk;
@@ -183,5 +249,22 @@ public class HeroController : MonoBehaviour
     public void OnFallEnter()
     {
         state = State.fall;
+    }
+
+    public void AtkColOn()
+    {
+        if(isFacingRight)
+        {
+            rightAtkCol.enabled = true;
+        }
+        else
+        {
+            leftAtkCol.enabled = true;
+        }
+    }
+    public void AtkColOff()
+    {
+        rightAtkCol.enabled = false;
+        leftAtkCol.enabled = false;
     }
 }
