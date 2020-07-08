@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class TestEnemyController : IEnemyController
 {
-    [Header("----- Other Data -----")]
+    [Header("----- Other Specific Data -----")]
     public float moveRadius = 10;
     private float startPositionX;
 
@@ -13,6 +13,7 @@ public class TestEnemyController : IEnemyController
         defCol = this.GetComponent<Collider2D>();
         startPositionX = this.transform.position.x;
         rigid = this.GetComponent<Rigidbody2D>();
+        anim = this.GetComponent<Animator>();
         enemyState = EnemyState.walk;
     }
 
@@ -81,6 +82,7 @@ public class TestEnemyController : IEnemyController
     {
         if(collision.gameObject.layer == LayerMask.GetMask("atkCol"))
         {
+            Debug.Log("NMDDDDDDDD");
             TakeDamage();
         }
     }

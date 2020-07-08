@@ -18,6 +18,7 @@ public class HeroController : MonoBehaviour
     [Header("----- Components -----")]
     public IPlayerInput pi;
     public Rigidbody2D rigid;
+    public GameManager gm;
     public LayerMask ground;
     public Transform groundCheck;
     public Transform ceiling;
@@ -26,6 +27,8 @@ public class HeroController : MonoBehaviour
     public BattleManager bm;
     public Collider2D rightAtkCol;
     public Collider2D leftAtkCol;
+    public Collider2D defCol;
+    public LayerMask traps;
 
     [Header("----- Other Data -----")]
     public float walkSpeed = 3;
@@ -35,7 +38,6 @@ public class HeroController : MonoBehaviour
     public int dashCount = 2;
     public float hitForceX = 0.5f;
     public float hitForceY = 0.5f;
-    public int hP = 3;
     public float immrotalTime;
     private float hitTimer = 0;
 
@@ -48,12 +50,14 @@ public class HeroController : MonoBehaviour
     public bool isDash;
     public bool isFacingRight;
     public bool canHit;
+    public bool isTrap;//有机会和isGround共存，搭建关卡的时候注意
 
 
     private void Awake()
     {
         pi = this.GetComponent<IPlayerInput>();
         rigid = this.GetComponent<Rigidbody2D>();
+        gm = GameObject.Find("GameManager").GetComponent<GameManager>();
         groundCheck = transform.DeepFind("groundCheck");
         ceiling = transform.DeepFind("ceiling");
         anim = this.GetComponent<Animator>();
@@ -64,6 +68,10 @@ public class HeroController : MonoBehaviour
         leftAtkCol = transform.DeepFind("leftAttack").GetComponent<Collider2D>();
     }
 
+    private void Start()
+    {
+        defCol = bm.defCol;
+    }
     private void Update()
     {
         if(pi.jump)
@@ -97,15 +105,84 @@ public class HeroController : MonoBehaviour
             Move();
         }
 
-        if(isGround&&state==State.normal)
+        if (isGround && (state == State.normal || state == State.walk))
         {
             dashCount = 1;
         }
 
-        if(!canHit)
+        OnTrap();
+
+        ResetCanHit();
+
+    }
+
+
+
+    /// <summary>
+    /// 角色受伤处理
+    /// </summary>
+    /// <param name="enemyPositionX"></param>
+    public void TakeDamage(float enemyPositionX)
+    {
+        if (canHit)
+        {
+            canHit = false;
+            if (gm.heroHp > 0)
+            {
+                gm.heroHp -= 1;
+                anim.SetTrigger("Hit");
+                state = State.hit;
+                if (enemyPositionX > this.transform.position.x)//敌人在右边
+                {
+                    rigid.velocity = new Vector2(-hitForceX, hitForceY);
+                }
+                else if (enemyPositionX < this.transform.position.x)//敌人在左边
+                {
+                    rigid.velocity = new Vector2(hitForceX, hitForceY);
+                }
+            }
+            else if (gm.heroHp <= 0)
+            {
+                anim.SetTrigger("Die");
+                Die();
+            }
+        }
+        else
+        {
+            //donothing
+        }
+
+    }
+
+    /// <summary>
+    /// 角色死亡处理
+    /// </summary>
+    public void Die()
+    {
+
+    }
+
+
+    /// <summary>
+    /// 设置动画状态机参数
+    /// </summary>
+    public void SetAnimation()
+    {
+        anim.SetFloat("WalkValue", Mathf.Abs(pi.dRight));
+        anim.SetFloat("FallValue", rigid.velocity.y);
+        anim.SetBool("IsGround", isGround);
+    }
+
+
+    /// <summary>
+    /// 重置受伤后霸体功能
+    /// </summary>
+    private void ResetCanHit()
+    {
+        if (!canHit)
         {
             hitTimer += Time.deltaTime;
-            if(hitTimer>=immrotalTime)
+            if (hitTimer >= immrotalTime)
             {
                 canHit = true;
                 hitTimer = 0;
@@ -113,6 +190,8 @@ public class HeroController : MonoBehaviour
         }
     }
 
+
+    #region 接受玩家信号后的动作处理部分
     public void Jump()
     {
         if (isGround)
@@ -156,11 +235,6 @@ public class HeroController : MonoBehaviour
         }
     }
 
-    public void DetectGround()
-    {
-        isGround = Physics2D.OverlapCircle(groundCheck.position, 0.1f, ground);
-    }
-
     public void Move()
     {
         rigid.velocity = new Vector2(pi.dRight * walkSpeed, rigid.velocity.y);
@@ -177,94 +251,91 @@ public class HeroController : MonoBehaviour
             isFacingRight = false;
         }
     }
-
-    public void TakeDamage(float enemyPositionX)
-    {
-        if (canHit)
-        {
-            canHit = false;
-            if (hP > 0)
-            {
-                hP -= 1;
-                anim.SetTrigger("Hit");
-                state = State.hit;
-                if (enemyPositionX > this.transform.position.x)//敌人在右边
-                {
-                    rigid.velocity = new Vector2(-hitForceX, hitForceY);
-                }
-                else if (enemyPositionX < this.transform.position.x)//敌人在左边
-                {
-                    rigid.velocity = new Vector2(hitForceX, hitForceY);
-                }
-            }
-            else if (hP <= 0)
-            {
-                anim.SetTrigger("Die");
-                Die();
-            }
-        }
-        else
-        {
-            //donothing
-        }
-
-    }
-
-    public void Die()
-    {
-
-    }
-
-    public void SetAnimation()
-    {
-        anim.SetFloat("WalkValue", Mathf.Abs(pi.dRight));
-        anim.SetFloat("FallValue", rigid.velocity.y);
-        anim.SetBool("IsGround", isGround);
-    }
+    #endregion
 
 
+    #region 动画机返还信息处理中心
     public void OnDashEnter()
     {
         rigid.gravityScale = 0;
     }
-
     public void OnDashExit()
     {
         dashPressed = false;
         rigid.velocity = new Vector2(rigid.velocity.x, rigid.velocity.y*0.1f);
         rigid.gravityScale = 3;
     }
-
-
     public void OnWalkEnter()
     {
         state = State.walk;
+        
     }
-
     public void OnIdleEnter()
     {
         state = State.normal;
     }
-
     public void OnFallEnter()
     {
         state = State.fall;
     }
+    #endregion
 
+
+    #region 控制战斗触发器部分
     public void AtkColOn()
     {
         if(isFacingRight)
         {
+            Debug.Log("右边攻击开启");
             rightAtkCol.enabled = true;
         }
         else
         {
+            Debug.Log("左边攻击开启");
             leftAtkCol.enabled = true;
         }
     }
     public void AtkColOff()
     {
+        Debug.Log("攻击开关闭");
         rightAtkCol.enabled = false;
         leftAtkCol.enabled = false;
+    }
+    public void DefColOn()
+    {
+
+    }
+    public void DefColOff()
+    {
+
+    }
+    #endregion
+
+
+    /// <summary>
+    /// 检测地面状态及检测陷阱状态
+    /// </summary>
+    public void DetectGround()
+    {
+        isGround = Physics2D.OverlapCircle(groundCheck.position, 0.1f, ground);
+        isTrap = Physics2D.OverlapCircle(groundCheck.position, 0.1f, traps);
+    }
+
+    /// <summary>
+    /// 触碰到陷阱后的处理
+    /// </summary>
+    public void OnTrap()
+    {
+        if(isTrap)
+        {
+            if(isFacingRight)
+            {
+                TakeDamage(this.transform.position.x + 1);
+            }
+            else
+            {
+                TakeDamage(this.transform.position.x - 1);
+            }
+        }
     }
 }

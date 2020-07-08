@@ -26,10 +26,13 @@ public abstract class IEnemyController : MonoBehaviour
     public Animator anim;
     public Rigidbody2D rigid;
 
-    [Header("----- Other Data -----")]
+    [Header("----- Other General Data -----")]
     public EnemyType enemyType;
     public float moveSpeed;
     public int enemyHp;
+    public int enemyDamage;
+    public int energyDrop;
+    [HideInInspector]
     public float direction;
     public float hitForceX;
     public float hitForceY;
