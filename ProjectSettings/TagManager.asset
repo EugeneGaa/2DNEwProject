@@ -42,18 +42,3 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: BackGround
-    uniqueID: 910456489
-    locked: 0
-  - name: Ground
-    uniqueID: 3900155309
-    locked: 0
-  - name: Spurs
-    uniqueID: 53707141
-    locked: 0
-  - name: Player
-    uniqueID: 1807735439
-    locked: 0
-  - name: Enemy
-    uniqueID: 82565105
-    locked: 0
