@@ -473,7 +473,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 3.0892467
+  orthographic size: 1.8
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -2216,7 +2216,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1778236383}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.971934, y: -0.94686866, z: -4.782222}
+  m_LocalPosition: {x: 2.61, y: 0.37, z: -4.782222}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -2713,6 +2713,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Test-Brick
+      objectReference: {fileID: 0}
+    - target: {fileID: 6465155058855647404, guid: 72d805531169e9c4792f38f68f94b0c6,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6465155058855647405, guid: 72d805531169e9c4792f38f68f94b0c6,
         type: 3}
